@@ -22,9 +22,23 @@
 		9C7A673C2E2083BC00D52147 /* json */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = json; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9C3738592E527235000086EB /* Exceptions for "json" folder in "json" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				src/test/array/properties.cpp,
+				src/test/array/sort.cpp,
+			);
+			target = 9C7A673B2E2083BC00D52147 /* json */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9C7A673E2E2083BC00D52147 /* json */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9C3738592E527235000086EB /* Exceptions for "json" folder in "json" target */,
+			);
 			path = json;
 			sourceTree = "<group>";
 		};
