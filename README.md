@@ -108,7 +108,9 @@ fruit->set(pear);
 
 #### Assign Properties
 ```
-pineapple->set(new object("name", encode("pineapple")));
+object* pineapple = new object({
+    new object("name", encode("pineapple"))
+});
 
 fruit->set(pineapple);
 
