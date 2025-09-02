@@ -142,91 +142,23 @@ std::string encode(const std::string string) {
     return result;
 }
 
-void merge(std::vector<std::string>& values, const std::string delimiter) {
-    for (int i = 0; i < values.size() - 1; i++) {
-        // find opening double quotations
-        size_t l = 0;
-        
-        while (l < values[i].length() && values[i][l] != '\"')
-            l++;
-        
-        // double quotations found
-        if (l != values[i].length()) {
-            // find closing double quotations
-            size_t j = l + 1;
-            
-            while (j < values[i].length()) {
-                if (values[i][j] == '\"') {
-                    size_t r = j + 1;
-                    
-                    while (r < values[i].length() && values[i][r] == '\"')
-                        r++;
-                    
-                    if ((r - j) % 2 == 0)
-                        j = r;
-                    else
-                        break;
-                } else
-                    j++;
-            }
-            
-            // none found in the same token
-            if (j == values[i].length()) {
-                bool flag = true;
-                
-                // find closing double quotations in subsequent tokens
-                while (flag && i < values.size() - 1) {
-                    size_t j = 0;
-                    
-                    while (j < values[i + 1].length()) {
-                        if (values[i + 1][j] == '\"') {
-                            size_t r = j + 1;
-                            
-                            while (r < values[i + 1].length() && values[i + 1][r] == '\"')
-                                r++;
-                            
-                            if ((r - j) % 2 == 0)
-                                j = r;
-                            else {
-                                // break nested loop
-                                flag = false;
-                                break;
-                            }
-                        } else
-                            j++;
-                    }
-                    
-                    // merge tokens
-                    values[i] += delimiter + values[i + 1];
-
-                    values.erase(values.begin() + i + 1);
-                }
-            }
-        }
-    }
-}
-
-int pow2(const int b) {
-    if (b == 0)
-        return 1;
+// 1. (\+|-)?
+// 2. (\+|-)?[0-9]+
+bool is_int(const std::string value) {
+    int i = 0;
     
-    return pow(2, ceil(log(b) / log(2)));
-}
-
-std::string trim(const std::string string) {
-    // find leading whitespace
-    size_t start = 0;
+    // leading positive (+) or negative (-) sign
+    if (i != value.length() && (value[i] == '+' || value[i] == '-'))
+        ++i;
     
-    while (start < string.length() && isspace(string[start]))
-        start++;
+    if (i == value.length())
+        return false;
     
-    // find trailing whitespace
-    size_t end = string.length();
+    for (; i < value.length(); i++)
+        if (!isdigit(value[i]))
+            return false;
     
-    while (end > start && isspace(string[end - 1]))
-        end--;
-        
-    return string.substr(start, end - start);
+    return true;
 }
 
 // 1. (\+|-)?
@@ -304,23 +236,16 @@ bool is_number(const std::string value) {
     return true;
 }
 
-// 1. (\+|-)?
-// 2. (\+|-)?[0-9]+
-bool is_int(const std::string value) {
-    int i = 0;
-    
-    // leading positive (+) or negative (-) sign
-    if (i != value.length() && (value[i] == '+' || value[i] == '-'))
-        ++i;
-    
-    if (i == value.length())
+bool is_pow(const size_t b, const size_t n) {
+    if (b == 0)
         return false;
     
-    for (; i < value.length(); i++)
-        if (!isdigit(value[i]))
-            return false;
+    if (n == 0)
+        return b < 2;
     
-    return true;
+    int result = log(b) / log(n);
+    
+    return (int)result - result == 0;
 }
 
 bool is_string(const std::string value) {
@@ -336,6 +261,70 @@ bool is_string_literal(const std::string value) {
     return i != value.length();
 }
 
+void merge(std::vector<std::string>& values, const std::string delimiter) {
+    for (int i = 0; i < values.size() - 1; i++) {
+        // find opening double quotations
+        size_t l = 0;
+        
+        while (l < values[i].length() && values[i][l] != '\"')
+            l++;
+        
+        // double quotations found
+        if (l != values[i].length()) {
+            // find closing double quotations
+            size_t j = l + 1;
+            
+            while (j < values[i].length()) {
+                if (values[i][j] == '\"') {
+                    size_t r = j + 1;
+                    
+                    while (r < values[i].length() && values[i][r] == '\"')
+                        r++;
+                    
+                    if ((r - j) % 2 == 0)
+                        j = r;
+                    else
+                        break;
+                } else
+                    j++;
+            }
+            
+            // none found in the same token
+            if (j == values[i].length()) {
+                bool flag = true;
+                
+                // find closing double quotations in subsequent tokens
+                while (flag && i < values.size() - 1) {
+                    size_t j = 0;
+                    
+                    while (j < values[i + 1].length()) {
+                        if (values[i + 1][j] == '\"') {
+                            size_t r = j + 1;
+                            
+                            while (r < values[i + 1].length() && values[i + 1][r] == '\"')
+                                r++;
+                            
+                            if ((r - j) % 2 == 0)
+                                j = r;
+                            else {
+                                // break nested loop
+                                flag = false;
+                                break;
+                            }
+                        } else
+                            j++;
+                    }
+                    
+                    // merge tokens
+                    values[i] += delimiter + values[i + 1];
+
+                    values.erase(values.begin() + i + 1);
+                }
+            }
+        }
+    }
+}
+
 double parse_number(const std::string value) {
     return is_number(value) ? stod(value) : NAN;
 }
@@ -344,14 +333,25 @@ int parse_int(const std::string value) {
     return is_int(value) ? stoi(value) : INT_MIN;
 }
 
-bool is_pow(const size_t b, const size_t n) {
+int pow2(const int b) {
     if (b == 0)
-        return false;
+        return 1;
     
-    if (n == 0)
-        return b < 2;
+    return pow(2, ceil(log(b) / log(2)));
+}
+
+std::string trim(const std::string string) {
+    // find leading whitespace
+    size_t start = 0;
     
-    int result = log(b) / log(n);
+    while (start < string.length() && isspace(string[start]))
+        start++;
     
-    return (int)result - result == 0;
+    // find trailing whitespace
+    size_t end = string.length();
+    
+    while (end > start && isspace(string[end - 1]))
+        end--;
+        
+    return string.substr(start, end - start);
 }
