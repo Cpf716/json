@@ -21,9 +21,11 @@ auto customer = new object({{ "t", "{ \"firstName\": \"Sam\", \"lastName\": \"Sm
 // Output: { customer: { firstName: "Sam", lastName: "Smith", fullName: "Sam Smith", preferredName: "Sam" }}
 ```
 
-### <b>Always free an object at the end of its lifecycle</b>
+### Perform Garbage Collection
 ```
-customer->free();
+// Always delete top-level objects at the end of their use
+
+delete fruit;
 ```
 
 ### Declare Properties
@@ -73,7 +75,7 @@ assign(customer, emails);
 // Output: { customer: { firstName: "Sam", lastName: "Smith", fullName: "Sam Smith", phones: ["6781234567"], "0": ["sam-smith@example.com"] }}
 ```
 
-### Stringify Objects
+### Convert Objects to String
 ```
 stringify(customer);
 ```
@@ -117,7 +119,7 @@ fruit->set(pineapple);
 // Output: ["apple", "banana", "orange", "pear", { "name": "pineapple" }]
 ```
 
-#### Splice Items
+#### Delete Items
 ```
 fruit->splice(1, 1);
 
