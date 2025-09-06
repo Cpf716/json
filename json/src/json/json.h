@@ -14,6 +14,19 @@
 
 namespace json {
     // Typedef
+    struct error: public std::exception {
+        // Constructors
+
+        error(const std::string what);
+
+        // Member Fields
+
+        const char* what() const throw();
+    private:
+        // Member Fields
+        
+        std::string _what;
+    };
 
     struct object {        
         enum type { array_t, object_t, primitive_t };

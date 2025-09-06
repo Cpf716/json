@@ -341,13 +341,13 @@ int pow2(const int b) {
 }
 
 std::string trim(const std::string string) {
-    // find leading whitespace
+    // Find leading whitespace
     size_t start = 0;
     
     while (start < string.length() && isspace(string[start]))
         start++;
     
-    // find trailing whitespace
+    // Find trailing whitespace
     size_t end = string.length();
     
     while (end > start && isspace(string[end - 1]))
