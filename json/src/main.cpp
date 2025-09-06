@@ -42,11 +42,11 @@ int main(int argc, const char * argv[]) {
     cout << stringify(temp) << endl;
     
     // Perform garbage collection
-    temp->free();
+    delete temp;
     
     // Dereference concatenated items
     array->erase();
     
     // Perform garbage collection
-    array->free();
+    delete array;
 }
