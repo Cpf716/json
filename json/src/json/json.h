@@ -104,7 +104,15 @@ namespace json {
 
         std::string&         value();
         
-        std::vector<object*> values();
+        // Non-Member Functions
+
+        friend std::string          _stringify(object* value);
+
+        friend object*              assign(object* target, object* source);
+
+        friend std::string          stringify(object* value);
+
+        friend std::vector<object*> values(object* value);
     protected:
         // Member Fields
 
@@ -149,9 +157,9 @@ namespace json {
         // Typedef
 
         struct iterator {
-            // Constructors
+            // Typdef
 
-            iterator(const size_t size, std::vector<object*> values);
+            friend json::array;
 
             // Operators
 
@@ -180,6 +188,10 @@ namespace json {
             int                  _index = 0;
             size_t               _size;
             std::vector<object*> _values;
+
+            // Constructors
+
+            iterator(const size_t size, std::vector<object*> values);
         };
 
         // Constructors
