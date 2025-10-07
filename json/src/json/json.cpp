@@ -395,7 +395,7 @@ namespace json {
     }
 
     array::iterator array::begin() {
-            return array::iterator(this->size(), this->_values);
+        return array::iterator(this->size(), this->_values);
     }
 
     json::array* array::concat(std::vector<object*> values) {
@@ -671,7 +671,7 @@ namespace json {
             
             return value;
         }
-        
+
         if (this->type() != object::object_t)
             throw json::error("Operation not permitted");
 

@@ -8,12 +8,13 @@
 #ifndef json_h
 #define json_h
 
+#include "util.h"
 #include <cassert>
 #include <map>
-#include "util.h"
 
 namespace json {
     // Typedef
+    
     struct error: public std::exception {
         // Constructors
 
@@ -29,8 +30,10 @@ namespace json {
     };
 
     struct object {        
+        // Typdef
+
         enum type { array_t, object_t, primitive_t };
-        
+
         // Constructors
         
         object();
@@ -103,7 +106,7 @@ namespace json {
         bool                 undefined();
 
         std::string&         value();
-        
+
         // Non-Member Functions
 
         friend std::string          _stringify(object* value);
