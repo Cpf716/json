@@ -2,7 +2,7 @@
 
 Thanks for checking out my JSON SDK for C++!
 
-It SDK enables C++ developers to natively handle JSON objects, whether for API integration, database operations, etc.
+It enables C++ developers to natively handle JSON objects, whether for API integration, database operations, etc.
 
 ## Examples
 
