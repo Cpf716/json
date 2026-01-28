@@ -185,7 +185,7 @@ namespace json {
         if (this->type() == object_t && this->size())
             throw json::error("Objects cannot have anonymous properties");
 
-        // sort by key
+        // Sort by key
         for (int i = 1; i < this->_key_map.size(); i++)
             for (int j = i - 1; j >= 0 && this->_key_map[j].first > this->_key_map[j + 1].first; j--)
                 std::swap(this->_key_map[j], this->_key_map[j + 1]);
@@ -252,7 +252,7 @@ namespace json {
         for (size_t i = start; i < end; i++) {
             if (source[i] == ",")
                 continue;
-                // anonymous value
+                // Anonymous value
             else if (source[i] == "{") {
                 target->type() = object::object_t;
                 
@@ -270,7 +270,7 @@ namespace json {
                     }
                 }
                 
-                // parse properties
+                // Parse properties
                 this->_parse(target, source, i + 1, j);
                 
                 i = j;
@@ -291,9 +291,9 @@ namespace json {
                     }
                 }
 
-                // an array's items must be parsed explicitly, as new objects are otherwise only allocated for named primitives
+                // An array's items must be parsed explicitly, as new objects are otherwise only allocated for named primitives
                 for (size_t k = i + 1; k < j; k++) {
-                    // named or anonymous values
+                    // Named or anonymous values
                     std::string key;
                     
                     if (k != j - 1 && source[k + 1] == ":") {
@@ -320,7 +320,7 @@ namespace json {
                 }
 
                 i = j;
-                // primitive
+                // Primitive
             } else if (i != end - 1 && source[i + 1] == ":") {
                 std::string key = decode(source[i]);
             
@@ -436,13 +436,13 @@ namespace json {
         if (this->type() == array_t) {
             int index = parse_int(key);
             
-            // named item
+            // Named item
             if (index == INT_MIN)
                 _erase();
-            // anonymous item
+            // Anonymous item
             else if (index < this->size())
                 ((array *)this)->get(index)->erase();
-            // (named) property
+            // (Named) property
         } else {
             if (this->type() != object_t)
                 throw json::error("Operation not permitted");
@@ -625,13 +625,13 @@ namespace json {
             if (value->key().empty()) {
                 this->_values.push_back(value);
                 
-                // sort before named values
+                // Sort before named values
                 for (size_t i = 0; i < this->_key_map.size(); i++)
                     std::swap(this->_values[this->_values.size() - i - 1],this->_values[this->_values.size() - i - 2]);
             } else {
                 int index = parse_int(value->key());
                 
-                // named value
+                // Named value
                 if (index == INT_MIN) {
                     this->_values.push_back(value);
                     this->_key_map.push_back({ value->key(), this->_key_map.size() });
@@ -641,22 +641,22 @@ namespace json {
                 } else if (index >= 0) {
                     value->_key = "";
                     
-                    // replace item
+                    // Replace item
                     if (index < this->size())
                         this->_values[index] = value;
-                        // add item
+                        // Add item
                     else {
                         while (this->size() < index) {
                             this->_values.push_back(new object());
                             
-                            // sort before named values
+                            // Sort before named values
                             for (size_t i = 0; i < this->_key_map.size(); i++)
                                 std::swap(this->_values[this->_values.size() - i - 1], this->_values[this->_values.size() - i - 2]);
                         }
                         
                         this->_values.push_back(value);
                         
-                        // sort before named values
+                        // Sort before named values
                         for (size_t i = 0; i < this->_key_map.size(); i++)
                             std::swap(this->_values[this->_values.size() - i - 1],this->_values[this->_values.size() - i - 2]);
                     }
@@ -684,7 +684,7 @@ namespace json {
             this->_values.push_back(value);
             this->_key_map.push_back({ value->key(), this->_key_map.size() });
             
-            // sort by key
+            // Sort by key
             for (size_t i = this->_key_map.size() - 1; i > 0 && this->_key_map[i].first < this->_key_map[i - 1].first; i--)
                 std::swap(this->_key_map[i], this->_key_map[i - 1]);
         } else
@@ -718,7 +718,7 @@ namespace json {
     std::string _stringify(object* value) {
         std::ostringstream ss;
         
-        // named value
+        // Named value
         if (!value->key().empty())
             ss << encode(value->key()) << ":";
 
@@ -770,19 +770,19 @@ namespace json {
      * Deep copy source and assign its contents to target
      */
     object* assign(object* target, object* source) {
-        // target is an array; clear its items
+        // Target is an array; clear its items
         if (target->type() == object::array_t) {
             if (source->type() == object::array_t) {
                 for (size_t i = 0; i < source->size(); i++)
                     ((json::array *)target)->set(i, source->_values[i]);
-                // source is an object; do nothing
+                // Source is an object; do nothing
             }
-            // target is an object
+            // Target is an object
         } else {
             if (target->type() != object::object_t)
                 throw json::error("Operation not permitted");
             
-            // source is an array; assign its items' keys by index
+            // Source is an array; assign its items' keys by index
             // Cloning is required to mutate keys
             for (size_t i = 0; i < source->size(); i++)
                 target->set(new object({{ "k", std::to_string(i) }, { "t", stringify(((array *)source)->get(i)) }}));
