@@ -12,7 +12,6 @@ using namespace json;
 using namespace std;
 
 int main(int argc, const char * argv[]) {
-    // Initialize array
     auto array = new json::array((vector<object*>) {
         new object({{ "v", to_string(12) }}),
         new object({{ "v", to_string(11) }}),
@@ -23,7 +22,7 @@ int main(int argc, const char * argv[]) {
 
     // Perform insertion sort
     for (int i = 1; i < array->size(); i++) {
-        for (int j = i - 1; j >= 0 && parse_int(array->get(j)->value()) > parse_int(array->get(j + 1)->value()); j--) {
+        for (int j = i - 1; j >= 0 && parse_number(array->get(j)->value()) > parse_number(array->get(j + 1)->value()); j--) {
             auto temp = array->get(j);
 
             array->set(j, array->get(j + 1));
@@ -31,21 +30,7 @@ int main(int argc, const char * argv[]) {
         }
     }
 
-    json::array* temp = array->concat((std::vector<object*>) {
-        new json::array((vector<object*>) {
-            new object((vector<object*>){
-                new object("value", std::to_string(99))
-            })
-        }) 
-    });
-
-    cout << stringify(temp) << endl;
-    
-    // Perform garbage collection
-    delete temp;
-    
-    // Dereference concatenated items
-    array->erase();
+    cout << "json array: " << stringify(array) << endl;
     
     // Perform garbage collection
     delete array;
