@@ -12,7 +12,7 @@ using namespace json;
 using namespace std;
 
 int main(int argc, const char * argv[]) {
-    auto array = new json::array((vector<object*>) {
+    auto array = new json::array({
         new object({{ "v", to_string(12) }}),
         new object({{ "v", to_string(11) }}),
         new object({{ "v", to_string(13) }}),
@@ -22,7 +22,7 @@ int main(int argc, const char * argv[]) {
 
     // Perform insertion sort
     for (int i = 1; i < array->size(); i++) {
-        for (int j = i - 1; j >= 0 && parse_number(array->get(j)->value()) > parse_number(array->get(j + 1)->value()); j--) {
+        for (int j = i - 1; j >= 0 && array->get(j)->number() > array->get(j + 1)->number(); j--) {
             auto temp = array->get(j);
 
             array->set(j, array->get(j + 1));

@@ -90,7 +90,7 @@ std::string decode(const std::string string) {
 
 std::string encode(const std::string string) {
     size_t len = string.length() + 1;
-    char*  str = new char[pow2((int)len + 2)];
+    char*  str = new char[pow2((int) len + 2)];
     
     strcpy(str, string.c_str());
     
@@ -107,7 +107,7 @@ std::string encode(const std::string string) {
         if (str[i] == '\"') {
             // resize, if required
             if (is_pow(len + 2, 2)) {
-                char* tmp = new char[pow2((int)(len + 2) * 2)];
+                char* tmp = new char[pow2((int) (len + 2) * 2)];
 
                 for (size_t j = 0; j < len; j++)
                     tmp[j] = str[j];
@@ -245,7 +245,7 @@ bool is_pow(const size_t b, const size_t n) {
     
     int result = log(b) / log(n);
     
-    return (int)result - result == 0;
+    return (int) result - result == 0;
 }
 
 bool is_string(const std::string value) {

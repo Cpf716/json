@@ -9,9 +9,6 @@
 #include <iostream>
 
 namespace json {
-    // Non-Member Fields
-
-    const std::string DELIMITERS[] { "[", "]", ",", ":", "{", "}" };
 
     // Constructors
 
@@ -111,7 +108,7 @@ namespace json {
         this->_index += value;
 
         if (this->_index > this->_size)
-            this->_index = (int)this->_size;
+            this->_index = (int) this->_size;
         else if (this->_index < 0)
             this->_index = 0;
 
@@ -140,7 +137,7 @@ namespace json {
         if (this->_index < 0)
             this->_index = 0;
         else if (this->_index > this->_size)
-            this->_index = (int)this->_size;
+            this->_index = (int) this->_size;
 
         return *this;
     }
@@ -169,10 +166,201 @@ namespace json {
         return this->_index != value._index;
     }
 
+    // Non-Member Functions
+
+    std::vector<std::string> _delimiters() {
+        return { "[", "]", ",", ":", "{", "}" };
+    }
+
+    std::string __stringify(object* value) {
+        std::ostringstream ss;
+        
+        // Named value
+        if (value->key().length())
+            ss << encode(value->key()) << ":";
+
+        if (value->null()) {
+            ss << null();
+
+            return ss.str();
+        }
+
+        if (value->undefined()) {
+            ss << "undefined";
+
+            return ss.str();
+        }
+        
+        if (value->type() == object::PRIMITIVE) {
+            if (value->_values.size())
+                throw error("Operation not permitted");
+            
+            ss << value->value();
+        } else {
+            if (value->value().length())
+                throw error("Operation not permitted");
+            
+            std::pair<std::string, std::string> delimeter =
+                ((std::map<enum object::type, std::pair<std::string, std::string>>) {
+                    { object::ARRAY, { "[", "]" }},
+                    { object::OBJECT, { "{", "}" }}
+                })[value->type()];
+            
+            ss << delimeter.first;
+            
+            for (size_t i = 0; i < value->_values.size() - 1; i++)
+                ss << __stringify(value->_values[i]) << ",";
+
+            ss << __stringify(value->_values[value->_values.size() - 1]);
+            ss << delimeter.second;
+        }
+            
+        return ss.str();
+    }
+
+    /**
+     * Deep copy source and assign its contents to target
+     */
+    object* assign(object* target, object* source) {
+        // Target is an array; clear its items
+        if (target->type() == object::ARRAY) {
+            if (source->type() == object::ARRAY) {
+                for (size_t i = 0; i < source->size(); i++)
+                    ((json::array *)target)->set(i, source->_values[i]);
+                // Source is an object; do nothing
+            }
+            // Target is an object
+        } else {
+            if (target->type() != object::OBJECT)
+                throw error("Operation not permitted");
+            
+            // Source is an array; assign its items' keys by index
+            // Cloning is required to mutate keys
+            for (size_t i = 0; i < source->size(); i++)
+                target->set(new object({{ "key", std::to_string(i) }, { "text", stringify(((array *)source)->get(i)) }}));
+            
+            std::vector<object*> values = json::values(source);
+    
+            for (size_t i = source->size(); i < values.size(); i++)
+                target->set(new object({{ "key", values[i]->key() }, { "text", stringify(values[i]) }}));
+        }
+      
+        return target;
+    }
+
+    std::vector<std::pair<std::string, object*>> entries(object* value) {
+        std::vector<std::pair<std::string, object*>> result;
+
+        for (object* _value: values(value))
+            result.push_back({ _value->key(), _value });
+
+        return result;
+    }
+
+    std::vector<std::string> keys(object* value) {
+        std::vector<std::string> result;
+        
+        if (value->type() == object::PRIMITIVE) {
+            if (!is_number(value->value()))
+                for (size_t i = 0; i < value->value().length(); i++)
+                    result.push_back(std::to_string(i));
+        } else {
+            if (value->type() == object::ARRAY)
+                for (size_t i = 0; i < value->size(); i++)
+                    result.push_back(std::to_string(i));
+
+            std::vector<object*> values = json::values(value);
+
+            for (size_t i = value->size(); i < values.size(); i++)
+                result.push_back(values[i]->key());
+        }
+        
+        return result;
+    }
+
+    std::string null() {
+        return "null";
+    }
+
+    object* parse(const std::string text) {
+        return new object({{ "text", text }});
+    }
+
+    std::string stringify(object* value) {
+        if (value->null())
+            throw error(null());
+
+        if (value->undefined())
+            throw error("undefined");
+        
+        std::ostringstream ss;
+        
+        if (value->type() == object::PRIMITIVE) {
+            if (value->_values.size())
+                throw error("Operation not permitted");
+            
+            ss << value->value();
+        } else {
+            if (value->value().length())
+                throw error("Operation not permitted");
+            
+            std::pair<std::string, std::string> delimeter =
+                ((std::map<enum object::type, std::pair<std::string, std::string>>) {
+                    { object::ARRAY, { "[", "]" }},
+                    { object::OBJECT, { "{", "}" }}
+                })[value->type()];
+            
+            ss << delimeter.first;
+            
+            for (size_t i = 0; i < value->_values.size() - 1; i++)
+                ss << __stringify(value->_values[i]) << ",";
+
+            ss << __stringify(value->_values[value->_values.size() - 1]);
+            
+            ss << delimeter.second;
+        }
+            
+        return ss.str();
+    }
+
+    std::string strtype(object* value) {
+        switch (value->type()) {
+            case object::ARRAY:
+                return "array";
+            case object::OBJECT:
+                return "object";
+            case object::PRIMITIVE: {
+                if (value->value() == null())
+                    return "unknown";
+
+                std::string lowerstr = tolowerstr(value->value());
+
+                if (lowerstr == "true" || lowerstr == "false")
+                    return "boolean";
+
+                return is_number(value->value()) ? "number" : "string";
+            }
+        }
+    }
+
+    std::vector<object*> values(object* value) {
+        if (value->type() == object::PRIMITIVE) {
+            std::vector<object*> result;
+            
+            if (!is_number(value->value()))
+                for (char c: decode(value->value()))
+                    result.push_back(new object({{ "value", encode(std::string((char[]){ c, '\0' })) }}));
+            
+            return result;
+        }
+
+        return value->_values;
+    }
+
     // Member Functions
 
     int object::_find(const std::string key) {
-        return this->_find(key, 0, (int)this->_key_map.size());
+        return this->_find(key, 0, (int) this->_key_map.size());
     }
 
     int object::_find(const std::string key, const int start, const int end) {
@@ -223,28 +411,28 @@ namespace json {
         while (end < text.length()) {
             size_t i;
             
-            for (i = 0; i < sizeof(DELIMITERS) / sizeof(DELIMITERS[0]); i++) {
-                if (end > text.length() - DELIMITERS[i].length())
+            for (i = 0; i < _delimiters().size(); i++) {
+                if (end > text.length() - _delimiters()[i].length())
                     continue;
                 
                 size_t j = 0;
                 
-                while (j < DELIMITERS[i].length() && text[end + j] == DELIMITERS[i][j])
+                while (j < _delimiters()[i].length() && text[end + j] == _delimiters()[i][j])
                     j++;
                 
-                if (j == DELIMITERS[i].length())
+                if (j == _delimiters()[i].length())
                     break;
             }
             
-            if (i == sizeof(DELIMITERS) / sizeof(DELIMITERS[0]))
+            if (i == _delimiters().size())
                 end++;
             else {
                 if (start != end)
                     tokens.push_back(text.substr(start, end - start));
                 
-                tokens.push_back(DELIMITERS[i]);
+                tokens.push_back(_delimiters()[i]);
 
-                start = (end += DELIMITERS[i].length());
+                start = (end += _delimiters()[i].length());
             }
         }
         
@@ -464,7 +652,7 @@ namespace json {
     }
 
     array::iterator array::end() {
-        return this->begin() + (int)this->size();
+        return this->begin() + (int) this->size();
     }
 
     void object::erase() {
@@ -593,7 +781,7 @@ namespace json {
     }
 
     json::array* array::slice(const int start) {
-        return this->slice(start, (int)this->size());
+        return this->slice(start, (int) this->size());
     }
 
     json::array* array::slice(int start, int end) {
@@ -612,7 +800,7 @@ namespace json {
             if (end < 0)
                 end = 0;
         } else if (end > this->size())
-            end = (int)this->size();
+            end = (int) this->size();
 
         for (int i = start; i < end; i++)
             result->set(this->get(i));
@@ -624,8 +812,8 @@ namespace json {
         int delete_count;
 
         if (start < 0) {
-            start += (int)this->size();
-            delete_count = (int)this->size();
+            start += (int) this->size();
+            delete_count = (int) this->size();
 
             if (start < 0)
                 start = 0;
@@ -634,7 +822,7 @@ namespace json {
         } else if (start >= this->size())
             delete_count = 0;
         else
-            delete_count = (int)this->size() - start;
+            delete_count = (int) this->size() - start;
 
         return this->_splice(start, delete_count, std::vector<object*>());
     }
@@ -648,8 +836,8 @@ namespace json {
             throw error("Operation not permitted");
 
         if (start < 0) {
-            start += (int)this->size();
-            delete_count = (int)this->size();
+            start += (int) this->size();
+            delete_count = (int) this->size();
 
             if (start < 0)
                 start = 0;
@@ -658,7 +846,7 @@ namespace json {
         } else if (start >= this->size())
             delete_count = 0;
         else if (start + delete_count > this->size())
-            delete_count = (int)this->size() - start;
+            delete_count = (int) this->size() - start;
 
         return this->_splice(start, delete_count, values);
     }
@@ -775,193 +963,5 @@ namespace json {
 
     const char* error::what() const throw() {
         return this->_what.c_str();
-    }
-
-    // Non-Member Functions
-
-    std::string _stringify(object* value) {
-        std::ostringstream ss;
-        
-        // Named value
-        if (value->key().length())
-            ss << encode(value->key()) << ":";
-
-        if (value->null()) {
-            ss << null();
-
-            return ss.str();
-        }
-
-        if (value->undefined()) {
-            ss << "undefined";
-
-            return ss.str();
-        }
-        
-        if (value->type() == object::PRIMITIVE) {
-            if (value->_values.size())
-                throw error("Operation not permitted");
-            
-            ss << value->value();
-        } else {
-            if (value->value().length())
-                throw error("Operation not permitted");
-            
-            std::pair<std::string, std::string> delimeter =
-                ((std::map<enum object::type, std::pair<std::string, std::string>>) {
-                    { object::ARRAY, { "[", "]" }},
-                    { object::OBJECT, { "{", "}" }}
-                })[value->type()];
-            
-            ss << delimeter.first;
-            
-            for (size_t i = 0; i < value->_values.size() - 1; i++)
-                ss << _stringify(value->_values[i]) << ",";
-
-            ss << _stringify(value->_values[value->_values.size() - 1]);
-            
-            ss << delimeter.second;
-        }
-            
-        return ss.str();
-    }
-
-    /**
-     * Deep copy source and assign its contents to target
-     */
-    object* assign(object* target, object* source) {
-        // Target is an array; clear its items
-        if (target->type() == object::ARRAY) {
-            if (source->type() == object::ARRAY) {
-                for (size_t i = 0; i < source->size(); i++)
-                    ((json::array *)target)->set(i, source->_values[i]);
-                // Source is an object; do nothing
-            }
-            // Target is an object
-        } else {
-            if (target->type() != object::OBJECT)
-                throw error("Operation not permitted");
-            
-            // Source is an array; assign its items' keys by index
-            // Cloning is required to mutate keys
-            for (size_t i = 0; i < source->size(); i++)
-                target->set(new object({{ "key", std::to_string(i) }, { "text", stringify(((array *)source)->get(i)) }}));
-            
-            std::vector<object*> values = json::values(source);
-    
-            for (size_t i = source->size(); i < values.size(); i++)
-                target->set(new object({{ "key", values[i]->key() }, { "text", stringify(values[i]) }}));
-        }
-      
-        return target;
-    }
-
-    std::vector<std::pair<std::string, object*>> entries(object* value) {
-        std::vector<std::pair<std::string, object*>> result;
-
-        for (object* _value: values(value))
-            result.push_back({ _value->key(), _value });
-
-        return result;
-    }
-
-    std::vector<std::string> keys(object* value) {
-        std::vector<std::string> result;
-        
-        if (value->type() == object::PRIMITIVE) {
-            if (!is_number(value->value()))
-                for (size_t i = 0; i < value->value().length(); i++)
-                    result.push_back(std::to_string(i));
-        } else {
-            if (value->type() == object::ARRAY)
-                for (size_t i = 0; i < value->size(); i++)
-                    result.push_back(std::to_string(i));
-
-            std::vector<object*> values = json::values(value);
-
-            for (size_t i = value->size(); i < values.size(); i++)
-                result.push_back(values[i]->key());
-        }
-        
-        return result;
-    }
-
-    std::string null() {
-        return "null";
-    }
-
-    object* parse(const std::string text) {
-        return new object({{ "text", text }});
-    }
-
-    std::string stringify(object* value) {
-        if (value->null())
-            throw error(null());
-
-        if (value->undefined())
-            throw error("undefined");
-        
-        std::ostringstream ss;
-        
-        if (value->type() == object::PRIMITIVE) {
-            if (value->_values.size())
-                throw error("Operation not permitted");
-            
-            ss << value->value();
-        } else {
-            if (value->value().length())
-                throw error("Operation not permitted");
-            
-            std::pair<std::string, std::string> delimeter =
-                ((std::map<enum object::type, std::pair<std::string, std::string>>) {
-                    { object::ARRAY, { "[", "]" }},
-                    { object::OBJECT, { "{", "}" }}
-                })[value->type()];
-            
-            ss << delimeter.first;
-            
-            for (size_t i = 0; i < value->_values.size() - 1; i++)
-                ss << _stringify(value->_values[i]) << ",";
-
-            ss << _stringify(value->_values[value->_values.size() - 1]);
-            
-            ss << delimeter.second;
-        }
-            
-        return ss.str();
-    }
-
-    std::string strtype(object* value) {
-        switch (value->type()) {
-            case object::ARRAY:
-                return "array";
-            case object::OBJECT:
-                return "object";
-            case object::PRIMITIVE: {
-                if (value->value() == null())
-                    return "unknown";
-
-                std::string lowerstr = tolowerstr(value->value());
-
-                if (lowerstr == "true" || lowerstr == "false")
-                    return "boolean";
-
-                return is_number(value->value()) ? "number" : "string";
-            }
-        }
-    }
-
-    std::vector<object*> values(object* value) {
-        if (value->type() == object::PRIMITIVE) {
-            std::vector<object*> result;
-            
-            if (!is_number(value->value()))
-                for (char c: decode(value->value()))
-                    result.push_back(new object({{ "value", encode(std::string((char[]){ c, '\0' })) }}));
-            
-            return result;
-        }
-
-        return value->_values;
     }
 }
